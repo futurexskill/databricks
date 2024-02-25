@@ -1,0 +1,42 @@
+CREATE OR REFRESH LIVE TABLE futurex_raw_demo_bronze
+COMMENT "The raw bank prosepects dataset"
+AS SELECT *
+FROM VALUES
+  (18, 20000, 'Male', 'Germany', 'N'),
+  (19, 22000, 'Female', 'France', 'N'),
+  (20, 24000, 'Female', 'England', 'N'),
+  (21, NULL, 'Male', 'England', 'N'),
+  (22, 50000, 'Male', 'France', 'Y'),
+  (23, 35000, 'Female', 'England', 'N'),
+  (24, NULL, 'Male', 'Germany', 'N'),
+  (25, 32000, 'Female', 'France', 'Y'),
+  (NULL, 35000, 'Male', 'Germany', 'N'),
+  (27, 37000, 'Female', 'France', 'N'),
+  (27, 37000, 'Female', 'unknown', 'N');
+  
+  
+CREATE OR REFRESH LIVE TABLE futurex_demo_silver(
+  CONSTRAINT valid_age_salary EXPECT (customer_age IS NOT NULL and customer_salary IS NOT NULL) ON VIOLATION DROP ROW
+)
+COMMENT "Cleaning customer data"
+AS SELECT
+  col1 AS customer_age,
+  col2 AS customer_salary,
+  col3 AS customer_gender,
+  col4 AS customer_country,
+  col5 AS customer_purchased
+FROM LIVE.futurex_raw_demo_bronze;
+
+
+CREATE LIVE TABLE futurex_gc_gold_demo
+COMMENT "Gender Country Summary"
+AS
+SELECT
+    customer_gender,
+    customer_country,
+    COUNT(*) AS total_customers
+FROM
+    LIVE.futurex_demo_silver
+GROUP BY
+    customer_country,
+    customer_gender;
